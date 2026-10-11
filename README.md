@@ -17,7 +17,7 @@ WiFi 源码固定为 `ec9ef10efc65da1e6d1de4e2c043c0e13d08eed8`；官方 OpenWrt
 - `luci-app-turboacc-mtk`：网络 → TurboACC，支持有线 HNAT、IPv6 HNAT、绑定阈值、运行状态与各 PPE 表使用量进度条。WiFi 的 Wireless HWNAT 开关在无线管理页面。
 - `luci-app-eqos-mtk`：EQoS 设备限速及硬件 QoS 页面，默认关闭。原后端依赖 64 个硬件队列；当前 MT7981 移植限定为 16 个队列，启动时拒绝不兼容的硬件接口，暂不能在本设备启用该后端。
 - `mtkhqos_util`：16 队列硬件 QoS 命令行工具，默认不执行；需要明确设置 `/etc/config/mtkhqos` 的 `global.enabled=1` 后启动服务。它与 EQoS 不应同时管理队列。
-- `mtk-smp`：原仓库的 MT7981 中断/RPS CPU 分配脚本。
+- `mtk-smp`：原仓库的 MT7981 中断/RPS CPU 分配脚本，随系统启动，把 WiFi 中断分配到 CPU1，无线 RPS 使用两个核心。显式依赖 `ethtool`，确保脚本的 GRO 设置能执行。
 
 TurboACC 已精简原仓库的无关依赖，移除 AP 网络重写与没有后端实现的 PPE 数量选项；保存加速设置不重启防火墙。实际 HNAT 状态和 PPE 统计来自驱动 debugfs。现有已绑定连接在关闭加速后是否立即清除取决于驱动行为，测试应使用新连接。
 
@@ -26,3 +26,9 @@ TurboACC 已精简原仓库的无关依赖，移除 AP 网络重写与没有后�
 `configs/existing-software.config` 按 10.10.10.100 刷机前清单补齐主要软件和管理页面，包括 PassWall（Xray、Sing-box、Shadowsocks Rust、HAProxy）、SmartDNS、ZeroTier、Cloudflared、DDNSTO、DDNS、微信推送、Socat、MQTT、TTYD、流量统计、Argon 和诊断/存储工具。基础库与内核模块由依赖解析选择，不复制旧内核模块或旧版本系统库。软件版本采用兼容 24.10 的包定义，可能与旧固件不同。
 
 厂商 `mtwifi-cfg` 现在显式依赖 `wifi-scripts`、Lua 和 nixio；配置与镜像检查均验证这些运行组件。固件不包含 AP 的密码、令牌或其他私人配置。设备保留配置升级时沿用已有设置。
+
+## AP 吞吐验证
+
+2026-10-11，X200 Pro 通过 5GHz WiFi 从有线树莓派下载，四个并发连接、每轮 256MiB，四次速度为 99.1、92.1、102.3、101.2 MB/s，平均 98.7 MB/s。当前移植可以在此局域网测试中达到约千兆吞吐。CPU 分配脚本已在设备上恢复；单独恢复脚本没有改善此前的 vivo 下载测速，不能把正常速度完全归功于该修改。
+
+同一 vivo 视频在树莓派有线网口的 64 并发公网测试平均 42.42 MB/s；手机公网测试连接已进入 HNAT 绑定流表，CPU 没有满载。公网测试与局域网测试的服务器和并发方式不同，结果不能证明单连接性能完全一致，也不能仅凭公网 40 MB/s 判断 WiFi 驱动回退。此次未回退驱动或内核，保留已有平台与安全修复。

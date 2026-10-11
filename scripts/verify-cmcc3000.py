@@ -70,7 +70,8 @@ elif mode == 'firmware':
                     'mtwifi-cfg', 'luci-app-mtwifi-cfg', 'lua', 'luci-lib-nixio', 'wifi-scripts',
                     'luci-app-passwall', 'smartdns', 'zerotier', 'cloudflared', 'ddnsto',
                     'npc', 'luci-app-nps',
-                    'luci-app-turboacc-mtk', 'luci-app-eqos-mtk', 'mtkhqos_util', 'mtk-smp']:
+                    'luci-app-turboacc-mtk', 'luci-app-eqos-mtk', 'mtkhqos_util', 'mtk-smp', 'ethtool', 'luci-theme-argon',
+                    'luci-i18n-base-zh-cn', 'zram-swap']:
         require(package in packages, 'Missing package in image: ' + package)
     with tempfile.TemporaryDirectory() as tmp:
         metadata_file = Path(tmp) / 'metadata.json'

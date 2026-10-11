@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mtk-smp
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_LICENSE:=GPL-2.0
 
 include $(INCLUDE_DIR)/package.mk
@@ -14,6 +14,7 @@ define Package/mtk-smp
   SECTION:=MTK Properties
   CATEGORY:=MTK Properties
   TITLE:=Setup mtk smp settings
+  DEPENDS:=+ethtool
   SUBMENU:=Applications
 endef
 
