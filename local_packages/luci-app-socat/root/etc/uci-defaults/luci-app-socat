@@ -1,0 +1,43 @@
+#!/bin/sh
+
+# socat owns /etc/config/socat; add only the LuCI-specific section.
+# Keep existing forwarding rules and the user's enable setting intact.
+if ! uci -q get socat.@global[0] >/dev/null; then
+	uci -q batch <<-EOF >/dev/null || exit 1
+		set socat.global=global
+		set socat.global.enable=0
+		commit socat
+	EOF
+fi
+
+# Older firmware created an anonymous section, hidden by LuCI's NamedSection.
+if ! uci -q get socat.global >/dev/null; then
+	uci -q rename socat.@global[0]=global || exit 1
+	uci -q commit socat || exit 1
+fi
+
+uci -q batch <<-EOF >/dev/null
+	delete firewall.socat
+	set firewall.socat=include
+	set firewall.socat.type=script
+	set firewall.socat.path=/var/etc/socat.include
+	set firewall.socat.reload=1
+	commit firewall
+EOF
+
+if [ -x /sbin/fw4 ]; then
+	if ! nft -at list chain inet fw4 socat_input >/dev/null 2>&1 ; then
+		rm -f /var/etc/socat.include
+		# load nftables.d
+		fw4 -q reload
+	fi
+fi
+uci -q batch <<-EOF >/dev/null
+	delete ucitrack.@socat[-1]
+	add ucitrack socat
+	set ucitrack.@socat[-1].init=luci_socat
+	commit ucitrack
+EOF
+
+rm -rf /tmp/luci-*cache
+exit 0

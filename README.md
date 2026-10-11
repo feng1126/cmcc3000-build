@@ -6,7 +6,7 @@ WiFi 源码固定为 `ec9ef10efc65da1e6d1de4e2c043c0e13d08eed8`；官方 OpenWrt
 
 包含 LuCI、厂商 WiFi 管理页面、NPS 客户端及 LuCI 页面、zram。内核警告处理与原驱动工程一致，关闭 `CONFIG_KERNEL_WERROR`，保留日志警告与已有代码修复。
 
-在 GitHub Actions 中打开 **Build CMCC RAX3000M OpenWrt MTK WiFi**，点击 **Run workflow**。编译成功并通过固件检查后自动创建 Release。失败时上传构建日志和配置，格式参数扫描仅提供候选问题，不替代实际编译。
+在 GitHub Actions 中打开 **Build CMCC RAX3000M NAND - MT7981 / OpenWrt 24.10**，点击 **Run workflow**。编译成功并通过固件检查后自动创建 Release。失败时上传构建日志和配置，格式参数扫描仅提供候选问题，不替代实际编译。
 
 构建检查包括驱动依赖、WiFi 固件、datconf 源码校验，以及生成镜像的设备标识、校验和、包清单与升级兼容元数据。镜像适用于 NAND，刷写前仍需在设备上执行 `sysupgrade -T` 并备份配置；编译检查不证明实际 WiFi、WAN 或硬件加速已通过运行测试。不会自动刷写设备。
 
@@ -20,3 +20,9 @@ WiFi 源码固定为 `ec9ef10efc65da1e6d1de4e2c043c0e13d08eed8`；官方 OpenWrt
 - `mtk-smp`：原仓库的 MT7981 中断/RPS CPU 分配脚本。
 
 TurboACC 已精简原仓库的无关依赖，移除 AP 网络重写与没有后端实现的 PPE 数量选项；保存加速设置不重启防火墙。实际 HNAT 状态和 PPE 统计来自驱动 debugfs。现有已绑定连接在关闭加速后是否立即清除取决于驱动行为，测试应使用新连接。
+
+## 原 AP 软件配置
+
+`configs/existing-software.config` 按 10.10.10.100 刷机前清单补齐主要软件和管理页面，包括 PassWall（Xray、Sing-box、Shadowsocks Rust、HAProxy）、SmartDNS、ZeroTier、Cloudflared、DDNSTO、DDNS、微信推送、Socat、MQTT、TTYD、流量统计、Argon 和诊断/存储工具。基础库与内核模块由依赖解析选择，不复制旧内核模块或旧版本系统库。软件版本采用兼容 24.10 的包定义，可能与旧固件不同。
+
+厂商 `mtwifi-cfg` 现在显式依赖 `wifi-scripts`、Lua 和 nixio；配置与镜像检查均验证这些运行组件。固件不包含 AP 的密码、令牌或其他私人配置。设备保留配置升级时沿用已有设置。

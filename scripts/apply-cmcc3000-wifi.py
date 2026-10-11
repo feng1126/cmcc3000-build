@@ -84,6 +84,9 @@ if s.count(old) != 3: raise RuntimeError('Unexpected WARP v2 reset logs')
 p.write_text(s.replace(old, '"%s(): check ser_busy_cnt: echo 18 > wed\\n", __func__'))
 for name in ['datconf','mtwifi-cfg','luci-app-mtwifi-cfg']:
  tree('package/mtk/applications/'+name)
+p=base/'package/mtk/applications/mtwifi-cfg/Makefile'
+s=p.read_text().replace('DEPENDS:=+iwinfo +wifi-dats +lua-cjson +datconf-lua', 'DEPENDS:=+iwinfo +wifi-dats +lua +luci-lib-nixio +wifi-scripts +lua-cjson +datconf-lua')
+p.write_text(s)
 # The donor vendors this source archive in dl/ instead of defining a download URL.
 archive='datconf-6bb733f7.tar.bz2'
 checksum='c1632b1950407e731c8a36b14d50d6e04bed7e7218938283e06e16ac9050d20b'
@@ -149,7 +152,8 @@ CONFIG_TARGET_ROOTFS_PARTSIZE=64
 # CONFIG_PACKAGE_kmod-mt7981-firmware is not set
 # CONFIG_PACKAGE_mt7981-wo-firmware is not set
 '''
-(base/'.config').write_text(config+'\n'.join(flags)+'\n')
+extra=(Path(__file__).resolve().parents[1]/'configs/existing-software.config').read_text()
+(base/'.config').write_text(config+'\n'.join(flags)+'\n'+extra)
 meta={'base':'official OpenWrt openwrt-24.10','wifi_repository':'padavanonly/immortalwrt-mt798x-6.6','wifi_branch':'openwrt-24.10-6.6','wifi_commit':subprocess.check_output(['git','-C',str(src),'rev-parse','HEAD'],text=True).strip(),'profile':'cmcc_rax3000m','storage':'NAND','kernel':(src/'include/kernel-6.6').read_text().strip(),'overlay':'MTK platform, generic Linux 6.6 patches, wireless stack'}
 (base/'cmcc3000-sources.json').write_text(json.dumps(meta,indent=2)+'\n')
 print(json.dumps(meta,indent=2))

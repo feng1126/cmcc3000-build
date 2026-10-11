@@ -1,0 +1,10 @@
+{
+  "passwall": "Copied from feng1126/openwrt-build local packages",
+  "proxy_backends": {
+    "repository": "immortalwrt/packages",
+    "branch": "openwrt-24.10",
+    "commit": "110d325c507051d78dac56d95d1c98a724eb0753"
+  },
+  "ddnsto": "linkease/nas-packages network/services/ddnsto",
+  "standard_packages": "OpenWrt official openwrt-24.10 feeds"
+}
