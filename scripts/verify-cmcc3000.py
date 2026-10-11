@@ -15,6 +15,16 @@ def require(condition, message):
 
 if mode == 'config':
     config = set((base / '.config').read_text().splitlines())
+    require('CONFIG_PACKAGE_rust=y' not in config, 'Unexpected Rust toolchain package')
+    require(not any(line.startswith('CONFIG_PACKAGE_shadowsocks-rust-') and line.endswith('=y') for line in config),
+            'Shadowsocks Rust must remain disabled')
+    # Custom packages do not retain the feeds' relative directory layout.
+    for package, language in [('xray-core', 'golang')]:
+        helper = base / 'feeds/packages/lang' / language / (language + '-package.mk')
+        require(helper.is_file(), 'Missing cross-compilation helper: ' + str(helper))
+        recipe = (base / 'package/custom' / package / 'Makefile').read_text()
+        require('include $(TOPDIR)/feeds/packages/lang/' + language + '/' + language + '-package.mk' in recipe,
+                'Wrong cross-compilation helper path for ' + package)
     require('# CONFIG_KERNEL_WERROR is not set' in config,
             'Kernel warning policy differs from the donor tree')
     required = ['TARGET_mediatek_filogic_DEVICE_cmcc_rax3000m', 'LUCI_LANG_zh_Hans']
