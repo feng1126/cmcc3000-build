@@ -1,0 +1,36 @@
+#!/bin/sh /etc/rc.common
+# Adapted from the donor MTK TurboACC service; keep network configuration intact.
+START=90
+STOP=10
+USE_PROCD=1
+start_service() {
+ config_load turboacc
+ local fastpath enabled ipv6 rate fullcone tcpcca
+ local path=/sys/kernel/debug/hnat
+ config_get fastpath config fastpath disabled
+ [ -e "$path/hook_toggle" ] || { logger -t turboacc 'HNAT debugfs interface unavailable'; return 1; }
+ config_get_bool enabled config fastpath_mh_eth_hnat 1
+ [ "$fastpath" = mediatek_hnat ] || enabled=0
+ if [ "$enabled" -eq 1 ]; then
+  config_get_bool ipv6 config fastpath_mh_eth_hnat_v6 1
+  config_get rate config fastpath_mh_eth_hnat_bind_rate 30
+  case "$rate" in ''|*[!0-9]*) return 1;; esac
+  [ "$rate" -ge 1 ] && [ "$rate" -le 30 ] || return 1
+  echo "8 $ipv6" > "$path/hnat_setting" || return 1
+  echo "11 $rate" > "$path/hnat_setting" || return 1
+ fi
+ echo "$enabled" > "$path/hook_toggle" || return 1
+ config_get fullcone config fullcone 0
+ if [ -e /proc/sys/net/netfilter/nf_conntrack_nat_mode ]; then
+  case "$fullcone" in 0|2) echo "$fullcone" > /proc/sys/net/netfilter/nf_conntrack_nat_mode;; esac
+ fi
+ config_get tcpcca config tcpcca cubic
+ case " $(cat /proc/sys/net/ipv4/tcp_available_congestion_control) " in
+  *" $tcpcca "*) echo "$tcpcca" > /proc/sys/net/ipv4/tcp_congestion_control;;
+ esac
+}
+reload_service() { start_service; }
+stop_service() {
+ [ ! -e /sys/kernel/debug/hnat/hook_toggle ] || echo 0 > /sys/kernel/debug/hnat/hook_toggle
+}
+service_triggers() { procd_add_reload_trigger turboacc; }

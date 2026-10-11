@@ -22,7 +22,9 @@ if mode == 'config':
         'kmod-mt_wifi', 'kmod-warp', 'kmod-conninfra', 'kmod-mediatek_hnat',
         'kmod-ipt-nat', 'wifi-dats', 'mtwifi-cfg', 'datconf-lua', 'wireless-tools',
         'luci', 'luci-ssl-openssl', 'luci-app-mtwifi-cfg', 'npc', 'luci-app-nps',
-        'rpcd-mod-file', 'zram-swap']]
+        'rpcd-mod-file', 'zram-swap', 'luci-app-turboacc-mtk', 'luci-app-eqos-mtk',
+        'mtkhqos_util', 'mtk-smp', 'luci-i18n-turboacc-mtk-zh-cn',
+        'luci-i18n-eqos-mtk-zh-cn']]
     required += ['MTK_CHIP_MT7981', 'MTK_CONNINFRA_APSOC_MT7981', 'first_card']
     for symbol in required:
         require('CONFIG_' + symbol + '=y' in config, 'Missing CONFIG_' + symbol)
@@ -61,7 +63,8 @@ elif mode == 'firmware':
     manifest = target / (profile['image_prefix'] + '.manifest')
     packages = {l.split()[0] for l in manifest.read_text().splitlines() if l.strip()}
     for package in ['kmod-mt_wifi', 'kmod-warp', 'kmod-conninfra', 'kmod-mediatek_hnat',
-                    'mtwifi-cfg', 'luci-app-mtwifi-cfg', 'npc', 'luci-app-nps']:
+                    'mtwifi-cfg', 'luci-app-mtwifi-cfg', 'npc', 'luci-app-nps',
+                    'luci-app-turboacc-mtk', 'luci-app-eqos-mtk', 'mtkhqos_util', 'mtk-smp']:
         require(package in packages, 'Missing package in image: ' + package)
     with tempfile.TemporaryDirectory() as tmp:
         metadata_file = Path(tmp) / 'metadata.json'

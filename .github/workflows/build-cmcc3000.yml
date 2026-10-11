@@ -33,7 +33,7 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
           mkdir -p package/custom
-          cp -a ../local_packages/npc ../local_packages/luci-app-nps package/custom/
+          cp -a ../local_packages/* package/custom/
           rm -rf tmp
           cp ../build-logs/cmcc3000.config.seed .config
           make defconfig 2>&1 | tee ../build-logs/defconfig.log
