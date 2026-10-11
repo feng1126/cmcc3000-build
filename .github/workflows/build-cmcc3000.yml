@@ -1,4 +1,4 @@
-name: mt7981–build
+name: mt7981-openwrt-build
 on:
   workflow_dispatch:
 defaults:
