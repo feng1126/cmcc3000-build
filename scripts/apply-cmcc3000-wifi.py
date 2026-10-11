@@ -130,6 +130,7 @@ CONFIG_PACKAGE_mtk-smp=y
 CONFIG_PACKAGE_datconf-lua=y
 CONFIG_PACKAGE_wireless-tools=y
 CONFIG_PACKAGE_luci=y
+CONFIG_LUCI_LANG_zh_Hans=y
 CONFIG_PACKAGE_luci-ssl-openssl=y
 CONFIG_PACKAGE_luci-i18n-base-zh-cn=y
 CONFIG_PACKAGE_luci-i18n-mtwifi-cfg-zh-cn=y
