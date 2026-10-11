@@ -1,0 +1,6 @@
+openwrt/
+wifi-source/
+build-logs/
+firmware/
+__pycache__/
+*.pyc

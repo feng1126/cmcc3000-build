@@ -1,0 +1,11 @@
+{
+  "luci-app-nps": {
+    "description": "Manage the NPS client",
+    "read": { "uci": ["npc"], "ubus": { "service": ["list"] } },
+    "write": {
+      "uci": ["npc"],
+      "ubus": { "file": ["exec"] },
+      "file": { "/etc/init.d/npc-codexweb": ["exec"] }
+    }
+  }
+}

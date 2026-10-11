@@ -1,0 +1,38 @@
+#!/bin/sh /etc/rc.common
+START=99
+STOP=10
+USE_PROCD=1
+
+start_service() {
+    local enabled server port vkey tls addr
+    config_load npc
+    config_get_bool enabled main enabled 0
+    [ "$enabled" = 1 ] || return 0
+    config_get server main server
+    config_get port main port 8025
+    config_get vkey main vkey
+    config_get_bool tls main tls 1
+    printf '%s' "$server" | grep -Eq '^[A-Za-z0-9._:-]+$' || return 1
+    printf '%s' "$port" | grep -Eq '^[0-9]+$' || return 1
+    [ "$port" -ge 1 ] && [ "$port" -le 65535 ] || return 1
+    printf '%s' "$vkey" | grep -Eq '^[A-Za-z0-9_-]{16,128}$' || return 1
+    case "$server" in *:*) addr="[$server]:$port" ;; *) addr="$server:$port" ;; esac
+    mkdir -p /etc/npc
+    chmod 700 /etc/npc
+    umask 077
+    {
+        printf '[common]\nserver_addr=%s\nconn_type=tcp\nvkey=%s\n' "$addr" "$vkey"
+        printf 'auto_reconnection=true\ncrypt=true\ncompress=false\ntls_enable=%s\n' "$([ "$tls" = 1 ] && echo true || echo false)"
+    } > /etc/npc/npc.conf
+    procd_open_instance
+    procd_set_param command /usr/bin/npc -config=/etc/npc/npc.conf
+    procd_set_param respawn 3600 5 0
+    procd_set_param stdout 0
+    procd_set_param stderr 0
+    procd_set_param file /etc/config/npc
+    procd_close_instance
+}
+
+service_triggers() {
+    procd_add_reload_trigger npc
+}

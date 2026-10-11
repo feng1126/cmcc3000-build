@@ -1,0 +1,8 @@
+{
+  "admin/services/npc": {
+    "title": "NPS 客户端",
+    "order": 65,
+    "action": { "type": "view", "path": "npc/config" },
+    "depends": { "acl": ["luci-app-nps"], "uci": { "npc": true } }
+  }
+}
