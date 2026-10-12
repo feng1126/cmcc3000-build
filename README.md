@@ -23,7 +23,7 @@ TurboACC 已精简原仓库的无关依赖，移除 AP 网络重写与没有后�
 
 ## 原 AP 软件配置
 
-`configs/existing-software.config` 按 10.10.10.100 刷机前清单补齐主要软件和管理页面，包括 PassWall（Xray、Sing-box、HAProxy；Shadowsocks Rust 已禁用）、SmartDNS、ZeroTier、Cloudflared、DDNSTO、DDNS、微信推送、Socat、MQTT、TTYD、流量统计、Argon 和诊断/存储工具。基础库与内核模块由依赖解析选择，不复制旧内核模块或旧版本系统库。软件版本采用兼容 24.10 的包定义，可能与旧固件不同。
+`configs/existing-software.config` 按 10.10.10.100 刷机前清单补齐主要软件和管理页面，包括 PassWall（Xray、Sing-box、HAProxy；Shadowsocks Rust 已禁用）、SmartDNS、ZeroTier、Cloudflared、DDNSTO、DDNS、微信推送、Socat、MQTT、流量统计、Argon 和诊断/存储工具。TTYD 和 LuCI 网页终端不再编译。基础库与内核模块由依赖解析选择，不复制旧内核模块或旧版本系统库。软件版本采用兼容 24.10 的包定义，可能与旧固件不同。
 
 厂商 `mtwifi-cfg` 现在显式依赖 `wifi-scripts`、Lua 和 nixio；配置与镜像检查均验证这些运行组件。固件不包含 AP 的密码、令牌或其他私人配置。设备保留配置升级时沿用已有设置。
 

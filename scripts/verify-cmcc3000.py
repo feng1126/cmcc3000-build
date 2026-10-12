@@ -15,6 +15,9 @@ def require(condition, message):
 
 if mode == 'config':
     config = set((base / '.config').read_text().splitlines())
+    require(not any(line.startswith(('CONFIG_PACKAGE_ttyd=', 'CONFIG_PACKAGE_luci-app-ttyd=',
+                                    'CONFIG_PACKAGE_luci-i18n-ttyd-')) and line.endswith(('=y', '=m'))
+                    for line in config), 'TTYD and its LuCI terminal must remain disabled')
     require(not (base/'target/linux/generic/pending-6.6/682-add-bcm-fullconenat-support.patch').exists(), 'BCM FullCone patch must be removed')
     require('CONFIG_PACKAGE_rust=y' not in config, 'Unexpected Rust toolchain package')
     require(not any(line.startswith('CONFIG_PACKAGE_shadowsocks-rust-') and line.endswith('=y') for line in config),
@@ -77,6 +80,8 @@ elif mode == 'firmware':
     require(digest == images[0]['sha256'], 'Image checksum mismatch')
     manifest = target / (profile['image_prefix'] + '.manifest')
     packages = {l.split()[0] for l in manifest.read_text().splitlines() if l.strip()}
+    require(not any(p in ('ttyd', 'luci-app-ttyd') or p.startswith('luci-i18n-ttyd-')
+                    for p in packages), 'Unexpected TTYD terminal in image')
     for package in ['kmod-mt_wifi', 'kmod-warp', 'kmod-conninfra', 'kmod-mediatek_hnat',
                     'mtwifi-cfg', 'luci-app-mtwifi-cfg', 'lua', 'luci-lib-nixio', 'wifi-scripts',
                     'luci-app-passwall', 'smartdns', 'zerotier', 'cloudflared', 'ddnsto',
