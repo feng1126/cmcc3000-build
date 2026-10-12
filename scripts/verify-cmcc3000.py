@@ -6,15 +6,22 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import tarfile
+from device_profiles import load_device
 
 base = Path(sys.argv[1]).resolve()
 mode = sys.argv[2]
+profile_name = json.loads((base / 'cmcc3000-sources.json').read_text())['profile']
+device = load_device(profile_name)
 def require(condition, message):
     if not condition:
         raise SystemExit(message)
 
 if mode == 'config':
     config = set((base / '.config').read_text().splitlines())
+    selected = [line for line in config if line.startswith('CONFIG_TARGET_mediatek_filogic_DEVICE_') and line.endswith('=y')]
+    require(selected == ['CONFIG_TARGET_mediatek_filogic_DEVICE_' + profile_name + '=y'],
+            'Expected only the selected device profile')
     require(not any(line.startswith(('CONFIG_PACKAGE_ttyd=', 'CONFIG_PACKAGE_luci-app-ttyd=',
                                     'CONFIG_PACKAGE_luci-i18n-ttyd-')) and line.endswith(('=y', '=m'))
                     for line in config), 'TTYD and its LuCI terminal must remain disabled')
@@ -31,7 +38,7 @@ if mode == 'config':
                 'Wrong cross-compilation helper path for ' + package)
     require('# CONFIG_KERNEL_WERROR is not set' in config,
             'Kernel warning policy differs from the donor tree')
-    required = ['TARGET_mediatek_filogic_DEVICE_cmcc_rax3000m', 'LUCI_LANG_zh_Hans']
+    required = ['TARGET_mediatek_filogic_DEVICE_' + profile_name, 'LUCI_LANG_zh_Hans']
     required += ['PACKAGE_' + p for p in [
         'kmod-mt_wifi', 'kmod-warp', 'kmod-conninfra', 'kmod-mediatek_hnat',
         'kmod-ipt-nat', 'wifi-dats', 'mtwifi-cfg', 'datconf-lua', 'wireless-tools',
@@ -69,13 +76,19 @@ elif mode == 'firmware':
     target = base / 'bin/targets/mediatek/filogic'
     profiles = json.loads((target / 'profiles.json').read_text())
     require(profiles.get('target') == 'mediatek/filogic', 'Wrong target')
-    profile = profiles.get('profiles', {}).get('cmcc_rax3000m', {})
-    require('cmcc,rax3000m' in profile.get('supported_devices', []), 'Wrong board')
+    profile = profiles.get('profiles', {}).get(profile_name, {})
+    require(device['board'] in profile.get('supported_devices', []), 'Wrong board')
     images = [i for i in profile.get('images', []) if i.get('type') == 'sysupgrade'
-              and i.get('filesystem') == 'squashfs' and i['name'].endswith('.itb')]
-    require(len(images) == 1, 'Expected exactly one NAND squashfs sysupgrade FIT')
+              and i.get('filesystem') == 'squashfs' and i['name'].endswith(device['sysupgrade_suffix'])]
+    require(len(images) == 1, 'Expected exactly one squashfs sysupgrade image for ' + profile_name)
     image = target / images[0]['name']
-    require(0 < image.stat().st_size < 0x7200000, 'Image exceeds raw UBI partition')
+    require(0 < image.stat().st_size < device['ubi_size'], 'Image exceeds raw UBI partition')
+    if device['sysupgrade_suffix'] == '.bin':
+        with tarfile.open(image) as archive:
+            members = {m.name for m in archive.getmembers() if m.isfile()}
+            prefix = 'sysupgrade-' + profile_name + '/'
+            require(prefix + 'kernel' in members and prefix + 'root' in members,
+                    'Wrong NAND sysupgrade TAR layout')
     digest = hashlib.sha256(image.read_bytes()).hexdigest()
     require(digest == images[0]['sha256'], 'Image checksum mismatch')
     manifest = target / (profile['image_prefix'] + '.manifest')
@@ -94,7 +107,7 @@ elif mode == 'firmware':
         subprocess.run([str(base / 'staging_dir/host/bin/fwtool'), '-i',
                         str(metadata_file), str(image)], check=True)
         metadata = json.loads(metadata_file.read_text())
-        require('cmcc,rax3000m' in metadata.get('supported_devices', []),
+        require(device['board'] in metadata.get('supported_devices', []),
                 'Wrong sysupgrade compatibility metadata')
     print('Verified:', image.name, 'bytes:', image.stat().st_size, 'sha256:', digest)
 else:

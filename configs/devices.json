@@ -1,0 +1,24 @@
+{
+  "cmcc_rax3000m": {
+    "label": "CMCC RAX3000M NAND",
+    "board": "cmcc,rax3000m",
+    "definition": "cmcc_rax3000m_common",
+    "dts": "mt7981b-cmcc-rax3000m",
+    "sysupgrade_suffix": ".itb",
+    "ubi_size": 119537664,
+    "artifact_prefix": "cmcc-rax3000m",
+    "release_prefix": "cmcc3000-openwrt",
+    "encrypted_filename": "cmcc3000-personal-firmware.tar.gz.enc"
+  },
+  "nokia_ea0326gmp": {
+    "label": "Nokia EA0326GMP NAND",
+    "board": "nokia,ea0326gmp",
+    "definition": "nokia_ea0326gmp",
+    "dts": "mt7981b-nokia-ea0326gmp",
+    "sysupgrade_suffix": ".bin",
+    "ubi_size": 115343360,
+    "artifact_prefix": "nokia-ea0326gmp",
+    "release_prefix": "nokia-ea0326gmp-openwrt",
+    "encrypted_filename": "nokia-ea0326gmp-personal-firmware.tar.gz.enc"
+  }
+}

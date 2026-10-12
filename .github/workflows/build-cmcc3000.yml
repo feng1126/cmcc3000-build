@@ -2,6 +2,13 @@ name: mt7981-openwrt-build
 on:
   workflow_dispatch:
     inputs:
+      device:
+        description: 'MT7981 NAND device'
+        type: choice
+        options:
+          - cmcc_rax3000m
+          - nokia_ea0326gmp
+        default: cmcc_rax3000m
       personal_config:
         description: 'Include private DDNSTO/ZeroTier config; encrypted artifact only'
         type: boolean
@@ -13,11 +20,29 @@ permissions:
   contents: write
 jobs:
   build:
-    name: CMCC RAX3000M NAND (MT7981)
+    name: ${{ inputs.device || 'cmcc_rax3000m' }} (MT7981 NAND)
+    env:
+      BUILD_DEVICE: ${{ inputs.device || 'cmcc_rax3000m' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
+      - name: Verify board-specific defaults
+        run: python3 -m unittest discover -s tests -v
+      - name: Select device profile
+        id: device
+        run: |
+          python3 - <<'PYTHON'
+          import json, os
+          from pathlib import Path
+          profiles = json.loads(Path('configs/devices.json').read_text())
+          profile = os.environ['BUILD_DEVICE']
+          if profile not in profiles:
+              raise SystemExit('Unsupported device profile')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              for key in ('label', 'artifact_prefix', 'release_prefix', 'encrypted_filename'):
+                  print(f'{key}={profiles[profile][key]}', file=output)
+          PYTHON
       - name: Prepare build host
         run: |
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
@@ -30,7 +55,7 @@ jobs:
           git -C wifi-source checkout ec9ef10efc65da1e6d1de4e2c043c0e13d08eed8
           mkdir -p build-logs
           git -C openwrt log -1 --format='%H %s' > build-logs/openwrt-source.txt
-          python3 scripts/apply-cmcc3000-wifi.py openwrt wifi-source
+          python3 scripts/apply-cmcc3000-wifi.py openwrt wifi-source "$BUILD_DEVICE"
           cp openwrt/cmcc3000-sources.json build-logs/
       - name: Update feeds and verify configuration
         run: |
@@ -51,8 +76,8 @@ jobs:
       - name: Inject private DDNSTO and ZeroTier configuration
         if: ${{ inputs.personal_config }}
         env:
-          CMCC_PRIVATE_CONFIG_B64: ${{ secrets.CMCC_PRIVATE_CONFIG_B64 }}
-          CMCC_PRIVATE_ARTIFACT_KEY: ${{ secrets.CMCC_PRIVATE_ARTIFACT_KEY }}
+          CMCC_PRIVATE_CONFIG_B64: ${{ secrets[inputs.device == 'nokia_ea0326gmp' && 'EA0326_PRIVATE_CONFIG_B64' || 'CMCC_PRIVATE_CONFIG_B64'] }}
+          CMCC_PRIVATE_ARTIFACT_KEY: ${{ secrets[inputs.device == 'nokia_ea0326gmp' && 'EA0326_PRIVATE_ARTIFACT_KEY' || 'CMCC_PRIVATE_ARTIFACT_KEY'] }}
         run: |
           test -n "$CMCC_PRIVATE_ARTIFACT_KEY"
           python3 scripts/inject-private-config.py openwrt/files
@@ -70,39 +95,41 @@ jobs:
           mkdir -p firmware
           find openwrt/bin/targets/mediatek/filogic -maxdepth 1 -type f -exec cp {} firmware/ \;
           cp build-logs/openwrt-source.txt openwrt/cmcc3000-sources.json firmware/
-          test -n "$(find firmware -name '*cmcc_rax3000m*squashfs-sysupgrade.itb' -print -quit)"
       - name: Encrypt personal firmware
         if: ${{ inputs.personal_config }}
         env:
-          CMCC_PRIVATE_ARTIFACT_KEY: ${{ secrets.CMCC_PRIVATE_ARTIFACT_KEY }}
+          CMCC_PRIVATE_ARTIFACT_KEY: ${{ secrets[inputs.device == 'nokia_ea0326gmp' && 'EA0326_PRIVATE_ARTIFACT_KEY' || 'CMCC_PRIVATE_ARTIFACT_KEY'] }}
+          ENCRYPTED_FILENAME: ${{ steps.device.outputs.encrypted_filename }}
         run: |
           mkdir -p encrypted-firmware
           tar -czf personal-firmware.tar.gz -C firmware .
-          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 -in personal-firmware.tar.gz -out encrypted-firmware/cmcc3000-personal-firmware.tar.gz.enc -pass env:CMCC_PRIVATE_ARTIFACT_KEY
+          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 -in personal-firmware.tar.gz -out "encrypted-firmware/$ENCRYPTED_FILENAME" -pass env:CMCC_PRIVATE_ARTIFACT_KEY
           cd encrypted-firmware
-          sha256sum cmcc3000-personal-firmware.tar.gz.enc > SHA256SUMS
+          sha256sum "$ENCRYPTED_FILENAME" > SHA256SUMS
       - uses: actions/upload-artifact@v4
         if: ${{ inputs.personal_config }}
         with:
-          name: cmcc-rax3000m-personal-encrypted-${{ github.run_id }}
+          name: ${{ steps.device.outputs.artifact_prefix }}-personal-encrypted-${{ github.run_id }}
           path: encrypted-firmware/
           retention-days: 7
       - uses: actions/upload-artifact@v4
         if: ${{ !inputs.personal_config }}
         with:
-          name: cmcc-rax3000m-nand-firmware
+          name: ${{ steps.device.outputs.artifact_prefix }}-nand-firmware
           path: firmware/
       - name: Publish firmware
         if: ${{ !inputs.personal_config }}
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          RELEASE_PREFIX: ${{ steps.device.outputs.release_prefix }}
+          DEVICE_LABEL: ${{ steps.device.outputs.label }}
         run: |
-          gh release create "cmcc3000-openwrt-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" firmware/* --title 'CMCC RAX3000M NAND OpenWrt with MTK WiFi' --notes 'Official OpenWrt 24.10 base with pinned padavanonly MTK WiFi and Linux 6.6 platform adaptation. NAND variant only. Preserve configuration where compatible; no automatic device flashing.' --latest=false
+          gh release create "${RELEASE_PREFIX}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" firmware/* --title "$DEVICE_LABEL OpenWrt with MTK WiFi" --notes 'Official OpenWrt 24.10 base with pinned padavanonly MTK WiFi and Linux 6.6 platform adaptation. NAND variant only. Preserve configuration where compatible; no automatic device flashing.' --latest=false
       - uses: actions/upload-artifact@v4
         if: ${{ always() && !inputs.personal_config }}
         with:
-          name: cmcc3000-build-logs-${{ github.run_id }}
+          name: ${{ inputs.device || 'cmcc_rax3000m' }}-build-logs-${{ github.run_id }}
           path: |
             build-logs/
             openwrt/.config

@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Import the Linux 6.6 MTK wireless/platform stack into official OpenWrt."""
 from pathlib import Path
+from device_profiles import load_device
 import shutil,sys,json,subprocess,re,hashlib
 base=Path(sys.argv[1]).resolve();src=Path(sys.argv[2]).resolve()
+profile=sys.argv[3] if len(sys.argv)>3 else 'cmcc_rax3000m'
+device=load_device(profile)
 def tree(rel):
  s=src/rel;d=base/rel
  if not s.is_dir():raise RuntimeError('Missing source '+rel)
@@ -108,8 +111,10 @@ block=block.replace('+kmod-nf-conntrack', '+kmod-nf-conntrack +kmod-ipt-nat')
 if 'define KernelPackage/mediatek_hnat\n' not in s:p.write_text(s+'\n'+block+'\n')
 # The image must use the vendor stack, not the default mt76 driver.
 p=base/'target/linux/mediatek/image/filogic.mk';s=p.read_text()
-a=s.index('define Device/cmcc_rax3000m_common\n');b=s.index('\nendef',a)
+a=s.index('define Device/'+device['definition']+'\n');b=s.index('\nendef',a)
 block=s[a:b]
+if 'kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware' not in block:
+ raise RuntimeError('Unexpected device WiFi package definition: '+profile)
 block=block.replace('kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware','kmod-mt_wifi mtwifi-cfg luci-app-mtwifi-cfg').replace('automount f2fsck mkf2fs','block-mount f2fsck mkf2fs')
 s=s[:a]+block+s[b:];p.write_text(s)
 # Generate a small router profile, keeping the complete donor MT7981 driver flags.
@@ -155,7 +160,8 @@ CONFIG_TARGET_ROOTFS_PARTSIZE=64
 # CONFIG_PACKAGE_mt7981-wo-firmware is not set
 '''
 extra=(Path(__file__).resolve().parents[1]/'configs/existing-software.config').read_text()
+config=config.replace('CONFIG_TARGET_mediatek_filogic_DEVICE_cmcc_rax3000m=y', 'CONFIG_TARGET_mediatek_filogic_DEVICE_'+profile+'=y')
 (base/'.config').write_text(config+'\n'.join(flags)+'\n'+extra)
-meta={'base':'official OpenWrt openwrt-24.10','wifi_repository':'padavanonly/immortalwrt-mt798x-6.6','wifi_branch':'openwrt-24.10-6.6','wifi_commit':subprocess.check_output(['git','-C',str(src),'rev-parse','HEAD'],text=True).strip(),'profile':'cmcc_rax3000m','storage':'NAND','kernel':(src/'include/kernel-6.6').read_text().strip(),'overlay':'MTK platform, generic Linux 6.6 patches, wireless stack'}
+meta={'base':'official OpenWrt openwrt-24.10','wifi_repository':'padavanonly/immortalwrt-mt798x-6.6','wifi_branch':'openwrt-24.10-6.6','wifi_commit':subprocess.check_output(['git','-C',str(src),'rev-parse','HEAD'],text=True).strip(),'profile':profile,'board':device['board'],'sysupgrade_suffix':device['sysupgrade_suffix'],'ubi_size':device['ubi_size'],'storage':'NAND','kernel':(src/'include/kernel-6.6').read_text().strip(),'overlay':'MTK platform, generic Linux 6.6 patches, wireless stack'}
 (base/'cmcc3000-sources.json').write_text(json.dumps(meta,indent=2)+'\n')
 print(json.dumps(meta,indent=2))

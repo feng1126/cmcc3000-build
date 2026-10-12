@@ -1,14 +1,25 @@
 # mt7981-openwrt-build
 
-独立构建工程，使用官方 OpenWrt `openwrt-24.10`，移植 `padavanonly/immortalwrt-mt798x-6.6` 的 `openwrt-24.10-6.6` 平台及 WiFi 驱动。仅适用于 CMCC RAX3000M NAND 版本。
+独立构建工程，使用官方 OpenWrt `openwrt-24.10`，移植 `padavanonly/immortalwrt-mt798x-6.6` 的 `openwrt-24.10-6.6` 平台及 WiFi 驱动。支持 CMCC RAX3000M NAND 和 Nokia EA0326GMP NAND。
 
 WiFi 源码固定为 `ec9ef10efc65da1e6d1de4e2c043c0e13d08eed8`；官方 OpenWrt 分支在每次构建时拉取最新提交，实际源码版本记录在发布附件中。Linux 6.6 平台补丁、HNAT、WARP、conninfra 与厂商 WiFi 配置一起移植。
 
 包含 LuCI、厂商 WiFi 管理页面、NPS 客户端及 LuCI 页面、zram。内核警告处理与原驱动工程一致，关闭 `CONFIG_KERNEL_WERROR`，保留日志警告与已有代码修复。
 
-在 GitHub Actions 中打开 **mt7981-openwrt-build**，点击 **Run workflow**。编译成功并通过固件检查后自动创建 Release。失败时上传构建日志和配置，格式参数扫描仅提供候选问题，不替代实际编译。
+在 GitHub Actions 中打开 **mt7981-openwrt-build**，点击 **Run workflow**，通过 `device` 选择 `cmcc_rax3000m` 或 `nokia_ea0326gmp`。编译成功并通过固件检查后自动创建 Release。失败时上传构建日志和配置，格式参数扫描仅提供候选问题，不替代实际编译。
 
 构建检查包括驱动依赖、WiFi 固件、datconf 源码校验，以及生成镜像的设备标识、校验和、包清单与升级兼容元数据。镜像适用于 NAND，刷写前仍需在设备上执行 `sysupgrade -T` 并备份配置；编译检查不证明实际 WiFi、WAN 或硬件加速已通过运行测试。不会自动刷写设备。
+
+## 设备选择
+
+两个设备共用 OpenWrt 分支、MTK WiFi/HNAT 驱动和软件清单，均不包含 ttyd。工作流每次只编译所选设备；设备树、镜像定义、升级元数据和容量检查按设备切换。
+
+| device | 设备 | sysupgrade 格式 | UBI 分区容量 | 默认网络用途 |
+|---|---|---|---|---|
+| `cmcc_rax3000m` | CMCC RAX3000M NAND | `.itb` FIT | 114 MiB | AP，LAN 10.10.10.100，关闭 DHCP |
+| `nokia_ea0326gmp` | Nokia EA0326GMP NAND | `.bin` sysupgrade TAR | 110 MiB | 路由器，LAN 10.10.10.10，WAN DHCP |
+
+2026-10-12 检查的 EA0326GMP 正在运行 OpenWrt 24.10-SNAPSHOT / Linux 6.6.95，使用厂商 `mt_wifi`，256 MiB RAM。`192.168.10.100` 是其 ZeroTier 地址，不是默认 LAN 地址。新配置复用现有软件包并包含 zram，不代表所有服务应同时启动。不同设备的镜像不能互刷。
 
 ## MTK 加速插件
 
@@ -19,7 +30,7 @@ WiFi 源码固定为 `ec9ef10efc65da1e6d1de4e2c043c0e13d08eed8`；官方 OpenWrt
 - `mtkhqos_util`：16 队列硬件 QoS 命令行工具，默认不执行；需要明确设置 `/etc/config/mtkhqos` 的 `global.enabled=1` 后启动服务。它与 EQoS 不应同时管理队列。
 - `mtk-smp`：原仓库的 MT7981 中断/RPS CPU 分配脚本，随系统启动，把 WiFi 中断分配到 CPU1，无线 RPS 使用两个核心。显式依赖 `ethtool`，确保脚本的 GRO 设置能执行。
 
-TurboACC 已精简原仓库的无关依赖，移除 AP 网络重写与没有后端实现的 PPE 数量选项；保存加速设置不重启防火墙。实际 HNAT 状态和 PPE 统计来自驱动 debugfs。现有已绑定连接在关闭加速后是否立即清除取决于驱动行为，测试应使用新连接。
+TurboACC 已精简原仓库的无关依赖，移除 AP 网络重写与没有后端实现的 PPE 数量选项；保存 FullCone 设置由 LuCI 应用防火墙配置；HNAT 参数由 TurboACC 服务应用。实际 HNAT 状态和 PPE 统计来自驱动 debugfs。现有已绑定连接在关闭加速后是否立即清除取决于驱动行为，测试应使用新连接。
 
 ## 原 AP 软件配置
 
@@ -35,11 +46,11 @@ TurboACC 已精简原仓库的无关依赖，移除 AP 网络重写与没有后�
 
 ## 首次启动默认设置
 
-包含 `default-settings` 和 `default-settings-chn`：首次启动使用中文、Argon、上海时区和国内 NTP。只有 LAN 仍为出厂地址 `192.168.1.1` 时才改为 AP 地址 `10.10.10.100/24`，网关/DNS `10.10.10.10`，关闭 LAN DHCP 与 IPv6 地址分配。已有自定义 LAN 地址保持不变。公开仓库和公开固件不包含个人服务令牌或 ZeroTier 私钥。
+包含 `default-settings` 和 `default-settings-chn`：首次启动使用中文、Argon、上海时区和国内 NTP。只有 LAN 仍为出厂地址 `192.168.1.1` 时才应用设备默认设置：CMCC 使用 AP 地址 `10.10.10.100/24`、网关/DNS `10.10.10.10`，关闭 LAN DHCP、DHCPv6 和 RA；Nokia EA0326GMP 使用路由模式，LAN `10.10.10.10/24`、LAN DHCP 服务保持开启，WAN `eth1` 使用 DHCP。已有自定义 LAN 地址保持不变。公开仓库和公开固件不包含个人服务令牌或 ZeroTier 私钥。
 
 ## 个人配置构建
 
-工作流输入 `personal_config=true` 时，从 GitHub Secrets `CMCC_PRIVATE_CONFIG_B64` 注入本人的 DDNSTO、ZeroTier UCI 配置，并用 `CMCC_PRIVATE_ARTIFACT_KEY` 加密生成的固件包。此模式只上传加密附件，保留 7 天，不发布 Release、不上传明文固件或构建日志。公开仓库的构建附件可能被其他登录用户下载，因此加密不能省略。解密密钥保存在个人本地目录，不放进仓库。默认公开构建不注入私人配置。ZeroTier 身份随此个人配置恢复，不应同时刷到其他设备。
+工作流输入 `personal_config=true` 时，按设备选择独立 GitHub Secrets：CMCC 使用 `CMCC_PRIVATE_CONFIG_B64` / `CMCC_PRIVATE_ARTIFACT_KEY`；Nokia 使用 `EA0326_PRIVATE_CONFIG_B64` / `EA0326_PRIVATE_ARTIFACT_KEY`，需要单独配置。注入该设备的 DDNSTO、ZeroTier UCI 配置，并加密生成的固件包。缺少对应设备的密钥或配置时构建失败，不会回退使用另一台设备的身份。此模式只上传加密附件，保留 7 天，不发布 Release、不上传明文固件或构建日志。公开仓库的构建附件可能被其他登录用户下载，因此加密不能省略。解密密钥保存在个人本地目录，不放进仓库。默认公开构建不注入私人配置。ZeroTier 身份随此个人配置恢复，不应同时刷到其他设备。
 
 ## nft_fullcone
 
