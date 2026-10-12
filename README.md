@@ -43,4 +43,4 @@ TurboACC 已精简原仓库的无关依赖，移除 AP 网络重写与没有后�
 
 ## nft_fullcone
 
-FullCone 使用与 `openwrt-build` 相同的 nft_fullcone 内核模块和 libnftnl、nftables、fw4 集成，移除 BCM 全局补丁。防火墙只有一个“全锥形 NAT（IPv4 / IPv6）”开关，同时设置 `fullcone` / `fullcone6`；只有启用了对应地址伪装的区域生成规则，不自动开启 NAT66。TurboACC 读取实际 nftables 规则显示状态，并链接防火墙设置。MTK HNAT/WED 保留，实际加速兼容性需新固件运行测试。
+FullCone 使用与 `openwrt-build` 相同的 nft_fullcone 内核模块和 libnftnl、nftables、fw4 集成，移除 BCM 全局补丁。TurboACC 加速页面只有一个“全锥形 NAT（IPv4 / IPv6）”开关，同时设置 `fullcone` / `fullcone6`；只有启用了对应地址伪装的区域生成规则，不自动开启 NAT66。TurboACC 读取实际 nftables 规则显示状态，并直接保存防火墙配置，防火墙页面不再添加重复开关。MTK HNAT/WED 保留，实际加速兼容性需新固件运行测试。

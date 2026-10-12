@@ -48,7 +48,8 @@ function getServiceStatus() {
 
 function getMTKPPEStatus() {
 	return Promise.all([
-		L.resolveDefault(getMTKPPEStat(), {})
+		L.resolveDefault(getMTKPPEStat(), {}),
+            uci.load('firewall')
 	]);
 }
 
@@ -100,6 +101,7 @@ return view.extend({
 		m = new form.Map('turboacc', _('TurboACC settings'),
 			_('Open source flow offloading engine (fast path or hardware NAT).'));
 
+        m.chain('firewall');
 		s = m.section(form.TypedSection);
 		s.anonymous = true;
 		s.render = function () {
@@ -226,9 +228,19 @@ return view.extend({
 		o.placeholder = 30;
 		o.depends('fastpath_mh_eth_hnat', '1');
 
-        o = s.option(form.DummyValue, '_fullcone_settings', _('Full Cone NAT'));
-        o.cfgvalue = function () {
-            return E('a', { href: L.url('admin/network/firewall') }, 'nft_fullcone：在防火墙中设置 IPv4 / IPv6 全锥形 NAT');
+        o = s.option(form.Flag, '_fullcone', '全锥形 NAT（IPv4 / IPv6）',
+            '使用 nft_fullcone；对启用地址伪装的区域生效，不自动开启 IPv6 NAT。');
+        o.rmempty = false;
+        o.cfgvalue = function() {
+            var defaults = uci.sections('firewall', 'defaults')[0];
+            return defaults && defaults.fullcone === '1' && defaults.fullcone6 === '1' ? '1' : '0';
+        };
+        o.write = function(section_id, value) {
+            var defaults = uci.sections('firewall', 'defaults')[0];
+            if (!defaults)
+                throw new Error('Firewall defaults section missing');
+            uci.set('firewall', defaults['.name'], 'fullcone', value);
+            uci.set('firewall', defaults['.name'], 'fullcone6', value);
         };
 
 		o = s.option(form.ListValue, 'tcpcca', _('TCP CCA'),

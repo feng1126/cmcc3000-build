@@ -46,15 +46,6 @@ def main():
     if target.exists():
         shutil.rmtree(target)
     shutil.copytree(REPO / 'local_packages/fullconenat-nft', target)
-    luci = source / 'feeds/luci/applications/luci-app-firewall'
-    subprocess.run(['patch', '--batch', '--forward', '--fuzz=0', '-p1',
-                    '-i', str(PATCHES / 'luci/001-fullcone-switch.patch')],
-                   cwd=luci, check=True)
-    po = luci / 'po/zh_Hans/firewall.po'
-    if 'msgid "Full Cone NAT"' in po.read_text():
-        raise SystemExit('Full Cone translations already exist; review feed changes')
-    with po.open('a') as f:
-        f.write('\n' + (PATCHES / 'luci/zh_Hans.po').read_text())
     print('Full Cone support installed; fw4 controls IPv4 / IPv6 activation.')
     print('Source: ' + manifest['upstream'] + ' @ ' + manifest['commit'])
 

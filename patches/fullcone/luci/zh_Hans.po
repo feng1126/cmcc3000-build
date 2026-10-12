@@ -1,5 +1,0 @@
-msgid "Full Cone NAT (IPv4 / IPv6)"
-msgstr "全锥形 NAT（IPv4 / IPv6）"
-
-msgid "Enable Full Cone NAT for IPv4 and IPv6 masquerading zones. Native IPv6 does not require NAT66."
-msgstr "同时为 IPv4 和 IPv6 地址伪装区域开启全锥形 NAT。原生 IPv6 不需要 NAT66。"

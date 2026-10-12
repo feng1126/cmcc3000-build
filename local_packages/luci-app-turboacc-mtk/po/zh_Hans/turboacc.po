@@ -13,8 +13,6 @@ msgid "Acceleration Status"
 msgstr "加速状态"
 
 #: applications/luci-app-turboacc/htdocs/luci-static/resources/view/turboacc.js:191
-msgid "Boardcom_FULLCONE_NAT"
-msgstr "Boardcom_FULLCONE_NAT(更低的CPU占用)"
 
 #: applications/luci-app-turboacc/htdocs/luci-static/resources/view/turboacc.js:151
 msgid "Bridge Acceleration"
@@ -186,8 +184,6 @@ msgid "TurboACC settings"
 msgstr "网络加速设置"
 
 #: applications/luci-app-turboacc/htdocs/luci-static/resources/view/turboacc.js:190
-msgid "XT_FULLCONE_NAT"
-msgstr "XT_FULLCONE_NAT(更佳的兼容性)"
 
 msgid "Apply this setting after reboot."
 msgstr "重启后应用此项设置。"
