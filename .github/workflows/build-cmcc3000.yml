@@ -40,6 +40,7 @@ jobs:
           ./scripts/feeds install -a
           mkdir -p package/custom
           cp -a ../local_packages/* package/custom/
+          python3 ../scripts/apply-fullcone.py .
           mkdir -p files
           cp -a ../files/. files/
           rm -rf tmp

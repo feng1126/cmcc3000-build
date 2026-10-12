@@ -5,7 +5,7 @@ STOP=10
 USE_PROCD=1
 start_service() {
  config_load turboacc
- local fastpath enabled ipv6 rate fullcone tcpcca
+ local fastpath enabled ipv6 rate tcpcca
  local path=/sys/kernel/debug/hnat
  config_get fastpath config fastpath disabled
  [ -e "$path/hook_toggle" ] || { logger -t turboacc 'HNAT debugfs interface unavailable'; return 1; }
@@ -20,10 +20,6 @@ start_service() {
   echo "11 $rate" > "$path/hnat_setting" || return 1
  fi
  echo "$enabled" > "$path/hook_toggle" || return 1
- config_get fullcone config fullcone 0
- if [ -e /proc/sys/net/netfilter/nf_conntrack_nat_mode ]; then
-  case "$fullcone" in 0|2) echo "$fullcone" > /proc/sys/net/netfilter/nf_conntrack_nat_mode;; esac
- fi
  config_get tcpcca config tcpcca cubic
  case " $(cat /proc/sys/net/ipv4/tcp_available_congestion_control) " in
   *" $tcpcca "*) echo "$tcpcca" > /proc/sys/net/ipv4/tcp_congestion_control;;

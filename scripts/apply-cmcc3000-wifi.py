@@ -47,6 +47,8 @@ p.write_text(s.replace(old, '+\tif (!mtk_is_netsys_v3_or_greater(eth) || idx < 0
 for part in ['backport-6.6','pending-6.6','hack-6.6','files','files-6.6']:
  rel='target/linux/generic/'+part
  if (src/rel).is_dir():tree(rel)
+# nft_fullcone replaces the global BCM expectation-helper implementation.
+(base/'target/linux/generic/pending-6.6/682-add-bcm-fullconenat-support.patch').unlink()
 for rel in ['target/linux/generic/config-6.6','include/kernel-6.6']:
  shutil.copy2(src/rel,base/rel)
 for rel in ['package/mtk/drivers','package/network/utils/iwinfo','package/network/config/wifi-scripts']:

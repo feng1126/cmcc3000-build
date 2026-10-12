@@ -54,14 +54,12 @@ local methods = {
 	},
 	getFullConeStat = {
 		call = function()
-			local fctype
-			if fs.access("/sys/module/xt_FULLCONENAT/refcnt") and
-			(readfile("/sys/module/xt_FULLCONENAT/refcnt") or "0") ~= "0" then
-				fctype = "xt_FULLCONENAT"
-			elseif  fs.access("/proc/sys/net/netfilter/nf_conntrack_nat_mode") and
-				(readfile("/proc/sys/net/netfilter/nf_conntrack_nat_mode") or "0") ~= "0" then
-				fctype = "Boardcom Fullcone"
-			end
+            local fctype
+            local v4 = sys.call("nft list table inet fw4 2>/dev/null | grep -qE 'meta nfproto ipv4 fullcone'") == 0
+            local v6 = sys.call("nft list table inet fw4 2>/dev/null | grep -qE 'meta nfproto ipv6 fullcone'") == 0
+            if v4 or v6 then
+                fctype = "nft_fullcone " .. (v4 and "IPv4" or "") .. (v4 and v6 and " + " or "") .. (v6 and "IPv6" or "")
+            end
 			print(json.stringify({ type = fctype }))
 		end
 	},

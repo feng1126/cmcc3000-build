@@ -1,0 +1,10 @@
+#!/bin/sh
+# FullCone is handled by fw4, only for masquerading zones.
+uci -q get firewall.@defaults[0] >/dev/null || exit 1
+uci set firewall.@defaults[0].fullcone='1'
+uci set firewall.@defaults[0].fullcone6='1'
+uci -q delete turboacc.config.fullcone
+uci commit firewall
+uci commit turboacc
+# Do not enable IPv6 masquerading: native IPv6/AP bridging stays unchanged.
+exit 0

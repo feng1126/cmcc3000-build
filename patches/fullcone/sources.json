@@ -1,0 +1,15 @@
+{
+  "upstream": "https://github.com/immortalwrt/immortalwrt",
+  "commit": "bf156b68e3c9829f3e494e458caf97a40413c34c",
+  "module_commit": "07d93b626ce5ea885cd16f9ab07fac3213c355d9",
+  "sha256": {
+    "local_packages/fullconenat-nft/Makefile": "a6a53ab39130be53b3492e85d87c6519dbe1467c4ce982d4abe893728ae13b37",
+    "local_packages/fullconenat-nft/patches/010-fix-build-with-kernel-6.12.patch": "6c9cf1a7dd95bae562e606263e9f45ca6a1177a41141e42d2844794ca20b7a85",
+    "patches/fullcone/firewall4/001-firewall4-add-support-for-fullcone-nat.patch": "41739bc28c596e1f0a89ac43945c6da06289b26a1a2d587f11c9d84394de9b25",
+    "patches/fullcone/libnftnl/001-libnftnl-add-fullcone-expression-support.patch": "c22f13bbd9a257b49512b97628e45ac322f25631221769b72036c6cf938f986f",
+    "patches/fullcone/luci/001-fullcone-switch.patch": "21f175cc82a0aa6f15bffdaaa414119934b6182e06419677b3b53cc3fe1448e6",
+    "patches/fullcone/luci/zh_Hans.po": "cb279be9dffc2d8107767724d08869674ee4fae1a90466c0464029de9bacdfdd",
+    "patches/fullcone/nftables/900-nftables-add-fullcone-expression-support.patch": "2e844e5ae01b17db7be305c919f786912c771c3ff4faa6ab6b8f2295ea4764be"
+  },
+  "adaptation": "CMCC OpenWrt 24.10: IPv6 LuCI toggle and BCM removal"
+}

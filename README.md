@@ -40,3 +40,7 @@ TurboACC 已精简原仓库的无关依赖，移除 AP 网络重写与没有后�
 ## 个人配置构建
 
 工作流输入 `personal_config=true` 时，从 GitHub Secrets `CMCC_PRIVATE_CONFIG_B64` 注入本人的 DDNSTO、ZeroTier UCI 配置，并用 `CMCC_PRIVATE_ARTIFACT_KEY` 加密生成的固件包。此模式只上传加密附件，保留 7 天，不发布 Release、不上传明文固件或构建日志。公开仓库的构建附件可能被其他登录用户下载，因此加密不能省略。解密密钥保存在个人本地目录，不放进仓库。默认公开构建不注入私人配置。ZeroTier 身份随此个人配置恢复，不应同时刷到其他设备。
+
+## nft_fullcone
+
+FullCone 使用与 `openwrt-build` 相同的 nft_fullcone 内核模块和 libnftnl、nftables、fw4 集成，移除 BCM 全局补丁。防火墙只有一个“全锥形 NAT（IPv4 / IPv6）”开关，同时设置 `fullcone` / `fullcone6`；只有启用了对应地址伪装的区域生成规则，不自动开启 NAT66。TurboACC 读取实际 nftables 规则显示状态，并链接防火墙设置。MTK HNAT/WED 保留，实际加速兼容性需新固件运行测试。

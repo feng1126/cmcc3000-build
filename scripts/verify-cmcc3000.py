@@ -15,6 +15,7 @@ def require(condition, message):
 
 if mode == 'config':
     config = set((base / '.config').read_text().splitlines())
+    require(not (base/'target/linux/generic/pending-6.6/682-add-bcm-fullconenat-support.patch').exists(), 'BCM FullCone patch must be removed')
     require('CONFIG_PACKAGE_rust=y' not in config, 'Unexpected Rust toolchain package')
     require(not any(line.startswith('CONFIG_PACKAGE_shadowsocks-rust-') and line.endswith('=y') for line in config),
             'Shadowsocks Rust must remain disabled')
@@ -81,7 +82,7 @@ elif mode == 'firmware':
                     'luci-app-passwall', 'smartdns', 'zerotier', 'cloudflared', 'ddnsto',
                     'npc', 'luci-app-nps',
                     'luci-app-turboacc-mtk', 'luci-app-eqos-mtk', 'mtkhqos_util', 'mtk-smp', 'ethtool', 'luci-theme-argon',
-                    'luci-i18n-base-zh-cn', 'zram-swap', 'default-settings', 'default-settings-chn']:
+                    'luci-i18n-base-zh-cn', 'zram-swap', 'default-settings', 'default-settings-chn', 'kmod-nft-fullcone']:
         require(package in packages, 'Missing package in image: ' + package)
     with tempfile.TemporaryDirectory() as tmp:
         metadata_file = Path(tmp) / 'metadata.json'
