@@ -1,0 +1,25 @@
+#!/bin/sh
+# CMCC AP defaults; apply once and preserve customized configurations.
+uci -q get system.@imm_init[0] >/dev/null || uci -q add system imm_init >/dev/null
+if ! uci -q get system.@imm_init[0].lang >/dev/null; then
+ uci set luci.main.lang='zh_cn'
+ uci set luci.main.mediaurlbase='/luci-static/argon'
+ uci set system.@imm_init[0].lang='1'
+ uci commit luci
+ uci commit system
+fi
+if [ "$(uci -q get network.lan.ipaddr)" = '192.168.1.1' ]; then
+ uci set network.lan.ipaddr='10.10.10.100'
+ uci set network.lan.netmask='255.255.255.0'
+ uci set network.lan.gateway='10.10.10.10'
+ uci set network.lan.dns='10.10.10.10'
+ uci set dhcp.lan.ignore='1'
+ uci set dhcp.lan.ra='disabled'
+ uci set dhcp.lan.dhcpv6='disabled'
+ uci set dhcp.lan.ndp='disabled'
+ uci set dhcp.@dnsmasq[0].localuse='0'
+ uci commit network
+ uci commit dhcp
+ ln -sf /tmp/resolv.conf.d/resolv.conf.auto /etc/resolv.conf
+fi
+exit 0

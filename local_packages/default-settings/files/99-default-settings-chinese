@@ -1,0 +1,13 @@
+#!/bin/sh
+uci -q get system.@imm_init[0] >/dev/null || uci -q add system imm_init >/dev/null
+if ! uci -q get system.@imm_init[0].system_chn >/dev/null; then
+ uci set system.@system[0].timezone='CST-8'
+ uci set system.@system[0].zonename='Asia/Shanghai'
+ uci -q delete system.ntp.server
+ uci add_list system.ntp.server='ntp.tencent.com'
+ uci add_list system.ntp.server='ntp1.aliyun.com'
+ uci add_list system.ntp.server='ntp.ntsc.ac.cn'
+ uci set system.@imm_init[0].system_chn='1'
+ uci commit system
+fi
+exit 0

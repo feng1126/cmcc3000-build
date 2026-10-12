@@ -81,7 +81,7 @@ elif mode == 'firmware':
                     'luci-app-passwall', 'smartdns', 'zerotier', 'cloudflared', 'ddnsto',
                     'npc', 'luci-app-nps',
                     'luci-app-turboacc-mtk', 'luci-app-eqos-mtk', 'mtkhqos_util', 'mtk-smp', 'ethtool', 'luci-theme-argon',
-                    'luci-i18n-base-zh-cn', 'zram-swap']:
+                    'luci-i18n-base-zh-cn', 'zram-swap', 'default-settings', 'default-settings-chn']:
         require(package in packages, 'Missing package in image: ' + package)
     with tempfile.TemporaryDirectory() as tmp:
         metadata_file = Path(tmp) / 'metadata.json'
