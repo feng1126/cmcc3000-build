@@ -36,3 +36,7 @@ TurboACC 已精简原仓库的无关依赖，移除 AP 网络重写与没有后�
 ## 首次启动默认设置
 
 包含 `default-settings` 和 `default-settings-chn`：首次启动使用中文、Argon、上海时区和国内 NTP。只有 LAN 仍为出厂地址 `192.168.1.1` 时才改为 AP 地址 `10.10.10.100/24`，网关/DNS `10.10.10.10`，关闭 LAN DHCP 与 IPv6 地址分配。已有自定义 LAN 地址保持不变。公开仓库和公开固件不包含个人服务令牌或 ZeroTier 私钥。
+
+## 个人配置构建
+
+工作流输入 `personal_config=true` 时，从 GitHub Secrets `CMCC_PRIVATE_CONFIG_B64` 注入本人的 DDNSTO、ZeroTier UCI 配置，并用 `CMCC_PRIVATE_ARTIFACT_KEY` 加密生成的固件包。此模式只上传加密附件，保留 7 天，不发布 Release、不上传明文固件或构建日志。公开仓库的构建附件可能被其他登录用户下载，因此加密不能省略。解密密钥保存在个人本地目录，不放进仓库。默认公开构建不注入私人配置。ZeroTier 身份随此个人配置恢复，不应同时刷到其他设备。

@@ -4,3 +4,6 @@ build-logs/
 firmware/
 __pycache__/
 *.pyc
+
+encrypted-firmware/
+personal-firmware.tar.gz

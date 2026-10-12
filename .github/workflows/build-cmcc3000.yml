@@ -1,6 +1,11 @@
 name: mt7981-openwrt-build
 on:
   workflow_dispatch:
+    inputs:
+      personal_config:
+        description: 'Include private DDNSTO/ZeroTier config; encrypted artifact only'
+        type: boolean
+        default: false
 defaults:
   run:
     shell: bash
@@ -42,6 +47,14 @@ jobs:
           make defconfig 2>&1 | tee ../build-logs/defconfig.log
           python3 ../scripts/verify-cmcc3000.py . config
           python3 ../scripts/check-cmcc3000-formats.py . > ../build-logs/format-audit.log
+      - name: Inject private DDNSTO and ZeroTier configuration
+        if: ${{ inputs.personal_config }}
+        env:
+          CMCC_PRIVATE_CONFIG_B64: ${{ secrets.CMCC_PRIVATE_CONFIG_B64 }}
+          CMCC_PRIVATE_ARTIFACT_KEY: ${{ secrets.CMCC_PRIVATE_ARTIFACT_KEY }}
+        run: |
+          test -n "$CMCC_PRIVATE_ARTIFACT_KEY"
+          python3 scripts/inject-private-config.py openwrt/files
       - name: Download sources
         run: |
           cd openwrt
@@ -57,18 +70,36 @@ jobs:
           find openwrt/bin/targets/mediatek/filogic -maxdepth 1 -type f -exec cp {} firmware/ \;
           cp build-logs/openwrt-source.txt openwrt/cmcc3000-sources.json firmware/
           test -n "$(find firmware -name '*cmcc_rax3000m*squashfs-sysupgrade.itb' -print -quit)"
+      - name: Encrypt personal firmware
+        if: ${{ inputs.personal_config }}
+        env:
+          CMCC_PRIVATE_ARTIFACT_KEY: ${{ secrets.CMCC_PRIVATE_ARTIFACT_KEY }}
+        run: |
+          mkdir -p encrypted-firmware
+          tar -czf personal-firmware.tar.gz -C firmware .
+          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 -in personal-firmware.tar.gz -out encrypted-firmware/cmcc3000-personal-firmware.tar.gz.enc -pass env:CMCC_PRIVATE_ARTIFACT_KEY
+          cd encrypted-firmware
+          sha256sum cmcc3000-personal-firmware.tar.gz.enc > SHA256SUMS
       - uses: actions/upload-artifact@v4
+        if: ${{ inputs.personal_config }}
+        with:
+          name: cmcc-rax3000m-personal-encrypted-${{ github.run_id }}
+          path: encrypted-firmware/
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: ${{ !inputs.personal_config }}
         with:
           name: cmcc-rax3000m-nand-firmware
           path: firmware/
       - name: Publish firmware
+        if: ${{ !inputs.personal_config }}
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
           gh release create "cmcc3000-openwrt-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" firmware/* --title 'CMCC RAX3000M NAND OpenWrt with MTK WiFi' --notes 'Official OpenWrt 24.10 base with pinned padavanonly MTK WiFi and Linux 6.6 platform adaptation. NAND variant only. Preserve configuration where compatible; no automatic device flashing.' --latest=false
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: ${{ always() && !inputs.personal_config }}
         with:
           name: cmcc3000-build-logs-${{ github.run_id }}
           path: |
