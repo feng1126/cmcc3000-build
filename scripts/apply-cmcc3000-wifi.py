@@ -17,6 +17,17 @@ original=(base/'target/linux/mediatek/Makefile').read_text()
 if 'KERNEL_PATCHVER:=6.6' not in original:raise RuntimeError('Expected OpenWrt 24.10 / Linux 6.6')
 tree('target/linux/mediatek')
 (base/'target/linux/mediatek/Makefile').write_text(original)
+# EA0326GMP uses kernel/rootfs UBI volumes and a sysupgrade TAR. It has
+# no chosen/rootdisk FIT-block descriptor, so fit_do_upgrade returns early.
+p=base/'target/linux/mediatek/filogic/base-files/lib/upgrade/platform.sh'
+s=p.read_text()
+old='\tnokia,ea0326gmp|\\\n'
+if s.count(old) != 1: raise RuntimeError('Unexpected EA0326GMP upgrade dispatch')
+s=s.replace(old, '')
+marker='platform_do_upgrade() {\n\tlocal board=$(board_name)\n\n\tcase "$board" in\n'
+if s.count(marker) != 1: raise RuntimeError('Unexpected platform upgrade function')
+s=s.replace(marker, marker + '\tnokia,ea0326gmp)\n\t\tCI_UBIPART="ubi"\n\t\tCI_KERNPART="kernel"\n\t\tCI_ROOTPART="rootfs"\n\t\tnand_do_upgrade "$1"\n\t\t;;\n')
+p.write_text(s)
 # The donor declares tagged structures without objects; static is invalid there.
 p=base/'target/linux/mediatek/patches-6.6/999-2903-mtk-enhance.patch'
 s=p.read_text()
