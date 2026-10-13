@@ -18,6 +18,13 @@ def require(condition, message):
         raise SystemExit(message)
 
 if mode == 'config':
+    if profile_name == 'nokia_ea0326gmp':
+        platform = (base / 'target/linux/mediatek/filogic/base-files/lib/upgrade/platform.sh').read_text()
+        branch = platform.split('\tnokia,ea0326gmp)\n', 1)[-1].split('\n\t\t;;', 1)[0]
+        require('\tnokia,ea0326gmp)\n' in platform and
+                'CI_UBIPART="ubi"' in branch and 'CI_KERNPART="kernel"' in branch and
+                'CI_ROOTPART="rootfs"' in branch and 'nand_do_upgrade "$1"' in branch,
+                'EA0326GMP sysupgrade TAR requires the kernel/rootfs NAND handler')
     config = set((base / '.config').read_text().splitlines())
     selected = [line for line in config if line.startswith('CONFIG_TARGET_mediatek_filogic_DEVICE_') and line.endswith('=y')]
     require(selected == ['CONFIG_TARGET_mediatek_filogic_DEVICE_' + profile_name + '=y'],
