@@ -1088,8 +1088,15 @@ start_dns() {
 	case "$direct_dns_mode" in
 		udp)
 			LOCAL_DNS=$(normalize_dns "$(config_n_get @global[0] direct_dns 223.5.5.5:53)")
+			local direct_dns_primary="$LOCAL_DNS" direct_dns_extra
+			# ChinaDNS-NG accepts multiple UDP resolvers; Xray requires one address.
+			if [ "$DNS_SHUNT" = "chinadns-ng" ]; then
+				for direct_dns_extra in $(config_n_get @global[0] direct_dns_extra ""); do
+					LOCAL_DNS="$LOCAL_DNS,$(normalize_dns "$direct_dns_extra")"
+				done
+			fi
 			china_ng_local_dns=${LOCAL_DNS}
-			v2ray_local_dns="direct_dns_udp_server=${LOCAL_DNS}"
+			v2ray_local_dns="direct_dns_udp_server=${direct_dns_primary}"
 		;;
 		tcp)	
 			local DIRECT_DNS=$(normalize_dns "$(config_n_get @global[0] direct_dns 223.5.5.5:53)")

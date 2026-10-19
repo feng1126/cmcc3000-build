@@ -229,6 +229,12 @@ o:value("119.28.28.28")
 o:depends("direct_dns_mode", "udp")
 o:depends("direct_dns_mode", "tcp")
 
+o = s:taboption("DNS", DynamicList, "direct_dns_extra", "其他直连 DNS")
+o.datatype = "or(ipaddr,ipaddrport(1))"
+o.description = "与主直连 DNS 一起交给 ChinaDNS-NG 查询，仅适用于 UDP 直连解析。"
+o:depends({dns_shunt = "chinadns-ng", direct_dns_mode = "udp"})
+o.rmempty = true
+
 o = s:taboption("DNS", Flag, "filter_proxy_ipv6", translate("Filter Proxy Host IPv6"))
 o.default = "0"
 

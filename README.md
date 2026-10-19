@@ -55,3 +55,10 @@ TurboACC 已精简原仓库的无关依赖，移除 AP 网络重写与没有后�
 ## nft_fullcone
 
 FullCone 使用与 `openwrt-build` 相同的 nft_fullcone 内核模块和 libnftnl、nftables、fw4 集成，移除 BCM 全局补丁。TurboACC 加速页面只有一个“全锥形 NAT（IPv4 / IPv6）”开关，同时设置 `fullcone` / `fullcone6`；只有启用了对应地址伪装的区域生成规则，不自动开启 NAT66。TurboACC 读取实际 nftables 规则显示状态，并直接保存防火墙配置，防火墙页面不再添加重复开关。MTK HNAT/WED 保留，实际加速兼容性需新固件运行测试。
+
+### PassWall 多直连 DNS
+
+DNS 页面增加“其他直连 DNS”列表，适用于 ChinaDNS-NG + UDP 直连解析。
+额外服务器与主 DNS 一起交给 ChinaDNS-NG 查询，Xray 仍只使用主 DNS。
+例如主 DNS `211.137.58.20`，额外添加 `211.137.64.163`、`119.29.29.29`。
+列表默认为空，不覆盖已有 DNS 设置。此功能同步自 openwrt-build 的 `9634e9b`。
