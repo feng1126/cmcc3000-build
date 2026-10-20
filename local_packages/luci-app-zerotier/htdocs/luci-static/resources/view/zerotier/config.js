@@ -69,6 +69,18 @@ return view.extend({
 
 		o = s.option(form.Flag, 'enabled', _('Enable'));
 
+		o = s.option(form.Value, 'mtu_device', _('ZeroTier interface name'),
+			_('Exact device name shown on the Interface info page, for example ztyqbrokj5. Leave empty to disable the local MTU override.'));
+		o.validate = function(section_id, value) {
+			return !value || /^zt[a-z0-9]{8}$/.test(value) || _('Enter a ZeroTier interface name such as ztyqbrokj5.');
+		};
+		o.placeholder = 'ztyqbrokj5';
+
+		o = s.option(form.Value, 'mtu', _('Interface MTU'),
+			_('Local interface MTU only. 1280 worked on this path; 1492 may bring back slow page loading. Applied when the ZeroTier interface appears.'));
+		o.datatype = 'range(1280,2800)';
+		o.placeholder = '1280';
+
 		o = s.option(form.Flag, '_lan_forward', '允许局域网访问 ZeroTier',
 			'启用 LAN 到 ZeroTier 的转发及 IPv4 地址伪装。自动使用实际接口地址和路由，无需填写 IP 或网关；不开放 ZeroTier 主动访问 LAN。保存并应用后生效。');
 		o.rmempty = false;
