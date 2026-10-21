@@ -26,6 +26,10 @@ if mode == 'config':
                 'CI_ROOTPART="rootfs"' in branch and 'nand_do_upgrade "$1"' in branch,
                 'EA0326GMP sysupgrade TAR requires the kernel/rootfs NAND handler')
     config = set((base / '.config').read_text().splitlines())
+    require(not any(line.startswith(('CONFIG_PACKAGE_mosdns=',
+                                     'CONFIG_PACKAGE_luci-app-mosdns=',
+                                     'CONFIG_PACKAGE_luci-i18n-mosdns-zh-cn='))
+                    for line in config), 'MosDNS must not be included in the firmware')
     selected = [line for line in config if line.startswith('CONFIG_TARGET_mediatek_filogic_DEVICE_') and line.endswith('=y')]
     require(selected == ['CONFIG_TARGET_mediatek_filogic_DEVICE_' + profile_name + '=y'],
             'Expected only the selected device profile')
